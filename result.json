@@ -1,0 +1,40 @@
+{
+  "records": [
+    {
+      "id": "rec_1",
+      "updated_at": "2026-08-20T10:00:00Z",
+      "payload": {
+        "value": 10
+      }
+    },
+    {
+      "id": "rec_2",
+      "updated_at": "2026-08-20T10:05:00Z",
+      "payload": {
+        "value": 20
+      }
+    },
+    {
+      "id": "rec_3",
+      "updated_at": "2026-08-20T10:00:00Z",
+      "payload": {
+        "value": 10
+      }
+    },
+    {
+      "id": "rec_4",
+      "updated_at": "2026-08-20T10:05:00Z",
+      "payload": {
+        "value": 20
+      }
+    }
+  ],
+  "errors": [],
+  "summary": {
+    "pages_fetched": 2,
+    "records_fetched": 4,
+    "failed": false,
+    "last_cursor": "cursor_3",
+    "next_cursor": "cursor_3"
+  }
+}
