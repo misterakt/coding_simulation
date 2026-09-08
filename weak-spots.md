@@ -1,6 +1,6 @@
 # Python Interview Practice: Weak Spots And Drills
 
-Last updated: 2026-08-21
+Last updated: 2026-09-07
 
 This is a practice guide, not a list of failures. These are the areas that caused the most friction across the first four exercises and will produce the biggest improvement with repetition.
 
@@ -9,6 +9,8 @@ This is a practice guide, not a list of failures. These are the areas that cause
 ### Pattern noticed
 
 The main difficulty has been deciding what to test, especially edge cases and failure paths. Initial tests usually covered empty input, one valid input, and the happy path. Important requirements such as malformed data, conflicts, invalid types, limits, and exceptions were often added only after review.
+
+MINI-004 initially used invalid-input assertions that could pass when the function returned a truthy value instead of raising. In MINI-004-R8, this improved to table-driven valid and invalid cases, exact exception-message checks, explicit failure when no exception is raised, and input-mutation snapshots. This is one clean demonstration; repeat it independently before treating the pattern as resolved.
 
 ### Better mental model
 
@@ -33,6 +35,8 @@ external exception or malformed response
 boundary value: 0, None, empty list, final page
 ```
 
+Group equivalent inputs into a table and use one assertion helper per behavior. This reduces duplicated test code while keeping each contract rule visible.
+
 ## 2. Validation Order And Failure Control Flow
 
 ### Pattern noticed
@@ -53,6 +57,19 @@ if not isinstance(response, dict):
 ```
 
 `e` exists only inside `except Exception as e:`. A validation problem is not an exception unless code actually raised one.
+
+For an expected-exception test, returning normally must fail the test:
+
+```python
+try:
+    function(invalid_input)
+except ValueError as error:
+    assert str(error) == "expected message"
+else:
+    raise AssertionError("Expected ValueError")
+```
+
+Do not use `assert function(invalid_input)` to test raising: a truthy return value makes that assertion pass.
 
 ### Drill
 

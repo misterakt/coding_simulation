@@ -1,6 +1,6 @@
 # Senior Data Engineer Python Mini Practice: Weak Spots
 
-Last updated: 2026-08-27
+Last updated: 2026-09-07
 
 Use this file only for weaknesses demonstrated during mini exercises. Keep entries specific, actionable, and linked to exercise IDs. Move resolved items to the resolved table instead of deleting them.
 
@@ -17,8 +17,9 @@ Use this file only for weaknesses demonstrated during mini exercises. Keep entri
 
 | Priority | Weak spot | Evidence | Impact | Next drill | Status |
 | --- | --- | --- | --- | --- | --- |
-| 1 | Exact output-contract handling | MINI-001-R2 now uses stable error codes, but names such as `WRONGE_DATA_TYPE_PAYMENT_ID` are inconsistent and differ from the supplied example. | Contract consumers may depend on exact, correctly named codes. | Define canonical codes and assert the full multi-error result exactly. | Practicing |
-| 2 | Type and boundary validation | MINI-001-R2 correctly handles whitespace/integer IDs, boolean amounts, and zero. | A regression could reintroduce malformed values without complete boundary tests. | Recheck these boundaries in one separate exercise before resolving. | Recheck |
+| 3 | Ordered uniqueness and collection choice | MINI-002 began with linear list membership; MINI-002-R1 removed duplicate conflicts using `set`, which did not preserve discovery order. The final version correctly used insertion-ordered dictionaries. | The wrong collection can produce O(n²) behavior or nondeterministic ordered output. | In MINI-003, state the ordering and lookup requirements before choosing list, set, or dictionary. | Recheck |
+| 1 | Exception semantics and failure-path tests | MINI-004 revisions repeatedly returned `ValueError` objects or used `assert function(invalid_record)`, which could pass when no exception was raised. MINI-004-R8 corrected the tests with `try`/`except`/`else` and table-driven cases. | Malformed records can leak into output while tests incorrectly report success. | Repeat the corrected failure-path pattern in one separate exercise before resolving. | Recheck |
+| 2 | Parse-then-validate control flow | MINI-004 initially inspected string formatting and validated before conversion, causing inconsistent behavior for zero, negative strings, and conversion errors. | Equivalent numeric representations can receive different validation results. | In a later parsing task, create one canonical candidate and apply domain checks once. | Recheck |
 
 Status values: `New`, `Practicing`, or `Recheck`.
 
@@ -41,7 +42,8 @@ Move an item here after two clean demonstrations in separate exercises.
 
 | Weak spot | First seen | Clean demonstrations | Resolution evidence |
 | --- | --- | --- | --- |
-| — | — | — | None yet. |
+| Exact output-contract handling | MINI-001 | MINI-003, MINI-004-R7 | Preserved exact result shapes in MINI-003 and exact canonical keys and exception text in MINI-004-R7. |
+| Type and boundary validation | MINI-001 | MINI-001-R2, MINI-004-R7 | Correctly handled whitespace and non-string identifiers, booleans, zero, negatives, and malformed values in two separate exercises. |
 
 ## Exercise Evidence
 
@@ -82,6 +84,30 @@ Add a compact entry only when an exercise reveals or rechecks a weakness.
 - Better rule: Convert every explicit example and boundary requirement into an exact assertion.
 - Small next drill: Preserve an exact output contract during MINI-002 and recheck one falsy/type boundary later.
 - Status: Recheck
+
+### MINI-002: Deduplicate Ingestion Events
+
+- Observed: The initial implementation treated identical repeats as conflicts and returned the wrong empty-output shape. A revision introduced keyed lookup but converted conflicts through a set, losing the ordering guarantee. The final implementation used insertion-ordered dictionaries, preserved the input, and passed exact normal, duplicate, conflict, empty, ordering, and non-mutation checks.
+- Why it matters: Idempotent ingestion must distinguish safe retries from conflicting replays, while deterministic output and stable return shapes protect downstream consumers and tests.
+- Better rule: Derive equality, ordering, uniqueness, and empty-output requirements separately, then choose collections that satisfy all four without post-processing that discards guarantees.
+- Small next drill: In MINI-003, select the lookup/grouping structure explicitly and write exact normal and empty assertions before considering the implementation complete.
+- Status: Recheck
+
+### MINI-003: Aggregate Usage Events
+
+- Observed: Directly leveraged nested dictionaries for two-level keyed grouping, accurately preserving encounter order and handling zero accumulation. Correctly analyzed O(N) time and space bounds.
+- Why it matters: Demonstrates clean collection selection and contract adherence on first pass.
+- Better rule: In mutation tests, snapshot input beforehand (`snapshot = deepcopy(events)`), call the function on `events`, and assert `events == snapshot`.
+- Small next drill: In MINI-004, test transformation with malformed / dirty fields alongside happy paths.
+- Status: Clean demonstration (1/2 for output contract and collection choice)
+
+### MINI-004: Usage normalization and exception semantics
+
+- Observed: Early revisions validated raw string forms before parsing, returned exception objects instead of raising, and used invalid-input assertions that could falsely pass. MINI-004-R8 corrected the submitted tests with table-driven cases, exact error assertions, explicit failure when no exception is raised, and mutation snapshots.
+- Why it matters: A normalization boundary must either return a complete canonical record or raise a stable exception; partial values and false-positive tests allow malformed data downstream.
+- Better rule: Parse allowed inputs into one candidate, validate the canonical value once, and make every exception test fail explicitly when no exception is raised.
+- Small next drill: Repeat the corrected failure-path assertion in one separate exercise before marking the weakness resolved.
+- Status: Recheck for exception tests and parse-then-validate flow
 
 ## Update Rules
 
