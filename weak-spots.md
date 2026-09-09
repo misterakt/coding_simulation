@@ -2,7 +2,7 @@
 
 Last updated: 2026-09-07
 
-This is a practice guide, not a list of failures. These are the areas that caused the most friction across the first four exercises and will produce the biggest improvement with repetition.
+This is a practice guide, not a list of failures. These are the areas that caused the most friction across the practice exercises and will produce the biggest improvement with repetition.
 
 ## 1. Creating Test Scenarios Before Coding
 
@@ -182,6 +182,60 @@ Treat the return shape as an API contract. Before coding, copy the requested key
 ### Drill
 
 Add one assertion that checks the full empty-result contract. For special cases, assert only the fields relevant to that behavior so tests remain readable.
+
+## 7. Streaming Does Not Automatically Bound Reconciliation State
+
+### Pattern noticed
+
+For the MINI-005 scale follow-up, the proposed approach was streaming with a `batch_id`. Streaming is the right direction for incremental reads, and `batch_id` is useful for lineage and resumability, but neither determines how matching state is bounded.
+
+### Rule to remember
+
+Two large snapshots still need a concrete matching strategy:
+
+- sorted inputs plus a merge join, retaining only the current keys
+- consistent hash partitioning by business key, processing one bounded partition at a time
+- an external keyed store or database join when local state cannot fit in memory
+
+Use `batch_id` to identify the snapshot/run, isolate retries, record checkpoints, and make outputs traceable. Do not treat it as the lookup mechanism.
+
+### Python interface to remember
+
+`Iterable[T]` means the function can receive values one at a time from a list, generator, file reader, or database cursor. `Iterator[T]` is the stateful object consumed with `next()`; a generator function that uses `yield` returns an iterator.
+
+```python
+from collections.abc import Iterable, Iterator
+from typing import Any
+
+
+def reconcile_streams(
+    source: Iterable[dict[str, Any]],
+    target: Iterable[dict[str, Any]],
+) -> Iterator[dict[str, Any]]:
+    ...
+    yield reconciliation_result
+```
+
+Prefer `Iterable` for the input annotation when the function only needs to loop once. Use `Iterator` for the return annotation when results are yielded lazily.
+
+```python
+for result in reconcile_streams(source, target):
+    write_result(result)  # consume immediately
+```
+
+Avoid `list(reconcile_streams(...))` for unbounded data because it collects every result in memory. Also remember that lazy iteration alone is not enough: the algorithm must avoid accumulating all previously seen keys. A sorted merge can retain only the current record from each iterator.
+
+### Drill
+
+For any streaming reconciliation design, state five things explicitly:
+
+```text
+input ordering or partitioning assumption
+where keyed matching happens
+maximum state retained in memory
+checkpoint and restart boundary
+whether any caller converts the iterator back into a list
+```
 
 ## What Is Already Improving
 

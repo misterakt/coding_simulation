@@ -53,16 +53,16 @@ Platform Data Engineer 코딩 테스트는 크게 네 층으로 나눌 수 있�
 
 ## 2. 권장 학습 우선순위
 
-| 우선순위 | 영역                                    | 도달 목표                                     |
-| -------- | --------------------------------------- | --------------------------------------------- |
-| 1        | Contract, cases, 자료구조, 복잡도       | 모든 문제를 같은 절차로 시작할 수 있다        |
-| 2        | 테스트와 edge case                      | 정상·경계·오류 동작을 코드로 검증할 수 있다   |
-| 3        | Iterable, iterator, generator, batching | 큰 입력을 bounded memory로 처리할 수 있다     |
-| 4        | OOP, API design, typing                 | 책임이 분리되고 테스트 가능한 코드를 설계한다 |
-| 5        | 예외 처리와 reliability                 | 실패를 분류하고 안전하게 전파·복구한다        |
-| 6        | Thread, process, asyncio, queue         | workload에 맞는 concurrency model을 선택한다  |
-| 7        | Memory model, GIL, GC, profiling        | runtime 동작을 정확한 조건과 함께 설명한다    |
-| 8        | `__slots__` 등 세부 최적화              | 측정 결과를 기반으로 제한적으로 적용한다      |
+| 우선순위 | 영역 | 도달 목표 |
+| --- | --- | --- |
+| 1 | Contract, cases, 자료구조, 복잡도 | 모든 문제를 같은 절차로 시작할 수 있다 |
+| 2 | 테스트와 edge case | 정상·경계·오류 동작을 코드로 검증할 수 있다 |
+| 3 | Iterable, iterator, generator, batching | 큰 입력을 bounded memory로 처리할 수 있다 |
+| 4 | OOP, API design, typing | 책임이 분리되고 테스트 가능한 코드를 설계한다 |
+| 5 | 예외 처리와 reliability | 실패를 분류하고 안전하게 전파·복구한다 |
+| 6 | Thread, process, asyncio, queue | workload에 맞는 concurrency model을 선택한다 |
+| 7 | Memory model, GIL, GC, profiling | runtime 동작을 정확한 조건과 함께 설명한다 |
+| 8 | `__slots__` 등 세부 최적화 | 측정 결과를 기반으로 제한적으로 적용한다 |
 
 `GIL`, GC, `__slots__` 같은 내부 지식은 중요하지만, 기본 구현과 테스트를 대신하지 않는다. 코딩 테스트에서는 완성도 높은 O(N) 구현과 정확한 edge-case 처리가 세부 runtime 지식보다 먼저다.
 
@@ -201,17 +201,17 @@ assert find_invalid_lists([]) == []
 
 ### 4.1 반드시 알아야 할 복잡도
 
-| 자료구조/연산            |    평균 복잡도 | 주의점                        |
-| ------------------------ | -------------: | ----------------------------- |
-| `list.append()`          | O(1) amortized | resize가 발생할 수 있다       |
-| `list.pop()`             |           O(1) | 마지막 원소 기준              |
-| `list.pop(0)`            |           O(N) | 나머지 원소를 이동해야 한다   |
-| `deque.append/popleft()` |           O(1) | queue에 적합하다              |
-| `dict` lookup/insert     |   O(1) average | key는 hashable해야 한다       |
-| `set` membership         |   O(1) average | dedup과 membership에 적합하다 |
-| sorting                  |     O(N log N) | Python sort는 stable하다      |
-| `heapq` push/pop         |       O(log N) | top-K, scheduler에 적합하다   |
-| `bisect` search          |       O(log N) | list insertion은 O(N)이다     |
+| 자료구조/연산 | 평균 복잡도 | 주의점 |
+| --- | ---: | --- |
+| `list.append()` | O(1) amortized | resize가 발생할 수 있다 |
+| `list.pop()` | O(1) | 마지막 원소 기준 |
+| `list.pop(0)` | O(N) | 나머지 원소를 이동해야 한다 |
+| `deque.append/popleft()` | O(1) | queue에 적합하다 |
+| `dict` lookup/insert | O(1) average | key는 hashable해야 한다 |
+| `set` membership | O(1) average | dedup과 membership에 적합하다 |
+| sorting | O(N log N) | Python sort는 stable하다 |
+| `heapq` push/pop | O(log N) | top-K, scheduler에 적합하다 |
+| `bisect` search | O(log N) | list insertion은 O(N)이다 |
 
 ### 4.2 자주 쓰는 도구
 
@@ -246,15 +246,15 @@ import heapq
 
 ### 5.1 기본 테스트 범주
 
-| 범주            | 확인 내용                              |
-| --------------- | -------------------------------------- |
-| Happy path      | 일반적인 정상 입력                     |
-| Boundary        | empty, one item, 최소·최대값           |
-| Invalid input   | 잘못된 타입과 구조                     |
-| Duplicate/order | 중복 처리와 결과 순서                  |
-| Exception       | 정확한 예외 타입과 메시지              |
-| State           | 객체 상태가 예상대로 변경되는가?       |
-| Interaction     | 외부 dependency가 올바르게 호출되는가? |
+| 범주 | 확인 내용 |
+| --- | --- |
+| Happy path | 일반적인 정상 입력 |
+| Boundary | empty, one item, 최소·최대값 |
+| Invalid input | 잘못된 타입과 구조 |
+| Duplicate/order | 중복 처리와 결과 순서 |
+| Exception | 정확한 예외 타입과 메시지 |
+| State | 객체 상태가 예상대로 변경되는가? |
+| Interaction | 외부 dependency가 올바르게 호출되는가? |
 
 ### 5.2 `assert`의 의미
 
@@ -760,12 +760,12 @@ except (KeyError, ValueError, TypeError) as error:
 
 ### 11.1 선택 기준
 
-| 상황                       | 우선 검토         | 주요 비용/위험                    |
-| -------------------------- | ----------------- | --------------------------------- |
-| Blocking I/O 수십~수백 개  | Thread pool       | shared state, thread safety       |
-| Pure Python CPU-bound      | Process pool      | serialization, startup, memory    |
-| 매우 많은 non-blocking I/O | `asyncio`         | cancellation, event-loop blocking |
-| Native library 계산        | library 동작 확인 | GIL release 여부, native threads  |
+| 상황 | 우선 검토 | 주요 비용/위험 |
+| --- | --- | --- |
+| Blocking I/O 수십~수백 개 | Thread pool | shared state, thread safety |
+| Pure Python CPU-bound | Process pool | serialization, startup, memory |
+| 매우 많은 non-blocking I/O | `asyncio` | cancellation, event-loop blocking |
+| Native library 계산 | library 동작 확인 | GIL release 여부, native threads |
 
 기본 GIL-enabled CPython에서는 한 프로세스 안에서 하나의 thread만 Python bytecode를 실행한다. 하지만 native extension은 GIL을 해제할 수 있고 Python 3.13 이상에는 optional free-threaded build도 존재한다. 따라서 “thread는 CPU-bound에 절대 사용할 수 없다”보다 runtime과 workload를 조건으로 설명한다.
 
@@ -919,13 +919,13 @@ class Record:
 
 ### 14.1 한 문제의 45분 구성
 
-|    시간 | 작업                              |
-| ------: | --------------------------------- |
-|   0~3분 | Contract, cases, assumptions 작성 |
-|   3~7분 | 접근 방법, 자료구조, 복잡도 설명  |
-|  7~27분 | 가장 단순하고 정확한 구현         |
-| 27~35분 | 테스트와 bug 수정                 |
-| 35~40분 | complexity와 trade-off 설명       |
+| 시간 | 작업 |
+| ---: | --- |
+| 0~3분 | Contract, cases, assumptions 작성 |
+| 3~7분 | 접근 방법, 자료구조, 복잡도 설명 |
+| 7~27분 | 가장 단순하고 정확한 구현 |
+| 27~35분 | 테스트와 bug 수정 |
+| 35~40분 | complexity와 trade-off 설명 |
 | 40~45분 | production follow-up 한 가지 적용 |
 
 처음부터 production-grade framework를 만들지 않는다. 먼저 working solution을 완성한다.
@@ -942,15 +942,15 @@ class Record:
 
 각 항목을 0~2점으로 평가한다.
 
-| 영역          | 0점          | 1점            | 2점                             |
-| ------------- | ------------ | -------------- | ------------------------------- |
-| Contract      | 바로 코딩    | 일부 가정 확인 | 입출력·오류·변경 여부 명확      |
-| Cases         | happy path만 | 일부 edge case | 정상·경계·malformed 포함        |
-| Correctness   | 주요 버그    | 수정 후 동작   | 테스트로 일관되게 검증          |
-| Complexity    | 설명 못함    | 대략 설명      | 병목과 trade-off까지 정확       |
-| Code design   | 책임 혼합    | 부분 분리      | 단순하고 테스트 가능            |
-| Communication | 침묵/중계    | 접근 설명      | 결정과 이유를 간결히 설명       |
-| Production    | 고려 없음    | 하나 언급      | failure/scale를 구체적으로 연결 |
+| 영역 | 0점 | 1점 | 2점 |
+| --- | --- | --- | --- |
+| Contract | 바로 코딩 | 일부 가정 확인 | 입출력·오류·변경 여부 명확 |
+| Cases | happy path만 | 일부 edge case | 정상·경계·malformed 포함 |
+| Correctness | 주요 버그 | 수정 후 동작 | 테스트로 일관되게 검증 |
+| Complexity | 설명 못함 | 대략 설명 | 병목과 trade-off까지 정확 |
+| Code design | 책임 혼합 | 부분 분리 | 단순하고 테스트 가능 |
+| Communication | 침묵/중계 | 접근 설명 | 결정과 이유를 간결히 설명 |
+| Production | 고려 없음 | 하나 언급 | failure/scale를 구체적으로 연결 |
 
 총점보다 0점 항목이 반복되는지를 추적한다.
 

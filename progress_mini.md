@@ -1,18 +1,18 @@
 # Senior Data Engineer Python Mini Practice Progress
 
-Last updated: 2026-09-07
+Last updated: 2026-09-09
 
 Use this file to track every exercise run with `docs/senior_data_engineer_python_interview_mini_prompt.md`.
 
 ## Current Status
 
-- Practice state: Active; MINI-004 completed on 2026-09-07
-- Topics completed: 4 of 10
-- Attempts recorded: 17
-- Latest result: Pass — C5/P3/T4/J4
-- Resume priority: 5 — Reconciliation
+- Practice state: Active; MINI-006 completed on 2026-09-09
+- Topics completed: 6 of 10
+- Attempts recorded: 24
+- Latest result: Pass — C5/P4/T5/J4
+- Resume priority: 7 — Retry, pagination, and resumability
 - Default timebox: 10 minutes
-- Next exercise ID: MINI-005
+- Next exercise ID: MINI-007
 - Current streak: 2 passes
 
 ## Stage 1 Closure
@@ -43,11 +43,11 @@ Work from the highest priority downward. Repeat a topic when the result is `Retr
 | Priority | Topic | Status | Best score | Next action |
 | --- | --- | --- | --- | --- |
 | 1 | Validation and malformed input | Solid | C4/P4/T3/J4 | Rechecked type boundaries and exact exceptions in MINI-004. |
-| 2 | Deduplication and idempotency | Solid | C5/P4/T4/J4 | Recheck ordered uniqueness and exact empty-output contracts later. |
+| 2 | Deduplication and idempotency | Solid | C5/P4/T4/J4 | Ordered keyed lookup rechecked in MINI-005. |
 | 3 | Dictionary lookup and grouping | Solid | C5/P5/T4/J5 | Covered in MINI-003. |
 | 4 | Transformation and parsing | Solid | C5/P3/T4/J4 | Recheck parse-then-validate flow and exception tests in a separate exercise. |
-| 5 | Reconciliation | Not started | — | Start MINI-005. |
-| 6 | Tests and edge cases | Not started | — | Pending. |
+| 5 | Reconciliation | Solid | C5/P3/T3/J4 | Recheck order-specific tests and bounded-state reconciliation later. |
+| 6 | Tests and edge cases | Solid | C5/P4/T5/J4 | Recheck deliberately conflicting input orders in a later test task. |
 | 7 | Retry, pagination, and resumability | Not started | — | Pending. |
 | 8 | Streaming and memory safety | Not started | — | Pending. |
 | 9 | Schema evolution and contracts | Not started | — | Pending. |
@@ -78,6 +78,13 @@ Add one row after every exercise, including retries.
 | 2026-09-07 | MINI-004-R6 | 4 — Transformation and parsing | Update | Complete parsed-unit validation | Revise | C4/P3/T2/J4 | Not recorded | Correctly raised unit errors and applied shared negative and finite checks. | Reject non-string identifiers instead of returning `None`. |
 | 2026-09-07 | MINI-004-R7 | 4 — Transformation and parsing | Update | Complete usage normalization | Pass | C5/P3/T2/J4 | Not recorded | Rejected malformed identifiers and passed 7 valid and 19 invalid external checks without mutation. | Start Priority 5 reconciliation; recheck exception-test design later. |
 | 2026-09-07 | MINI-004-R8 | 4 — Transformation and parsing | Test | Add reliable normalization tests | Pass | C5/P3/T4/J4 | Not recorded | Added table-driven valid and invalid cases, exact exception assertions, explicit no-exception failure, and non-mutation checks. | Start Priority 5 reconciliation; repeat the failure-path pattern in a separate exercise. |
+| 2026-09-07 | MINI-005 | 5 — Reconciliation | Implement | Reconcile invoice snapshots | Revise | C3/P3/T2/J3 | Not recorded | Built keyed lookups and exact duplicate-ID failure handling. | Preserve all required output orders and assert valid results exactly. |
+| 2026-09-07 | MINI-005-R1 | 5 — Reconciliation | Update | Fix ordered reconciliation | Revise | C4/P3/T3/J3 | Not recorded | Restored deterministic missing-ID order and compared only contract fields. | Drive `changed` from source order and remove linear list membership. |
+| 2026-09-07 | MINI-005-R2 | 5 — Reconciliation | Update | Complete linear ordered reconciliation | Pass | C5/P3/T3/J4 | Not recorded | Derived all classifications from insertion-ordered dictionaries, compared only amount/status, and passed ordering, duplicate, empty, extra-field, and non-mutation checks. | Start Priority 6 tests and edge cases; add deliberately reversed-order cases. |
+| 2026-09-09 | MINI-006 | 6 — Tests and edge cases | Test | Test loadable file selection | Revise | C3/P4/T3/J3 | Not recorded | Added empty, duplicate, normal, mismatch, ordering, and non-mutation cases. | Make the ordering fixture isolate order and cover duplicate arrivals. |
+| 2026-09-09 | MINI-006-R1 | 6 — Tests and edge cases | Test | Correct test coverage gaps | Retry | C2/P3/T3/J3 | Not recorded | Added duplicate-arrival and successful-path mutation cases. | Fix tuple syntax, execute the valid-case table, and correct the second ordering fixture. |
+| 2026-09-09 | MINI-006-R2 | 6 — Tests and edge cases | Test | Complete ordering fixtures | Revise | C4/P3/T4/J4 | Not recorded | Corrected both reversed-order fixtures and added the valid-case loop. | Call the function with the loop variables rather than later mutation-test variables. |
+| 2026-09-09 | MINI-006-R3 | 6 — Tests and edge cases | Test | Complete loadable-file tests | Pass | C5/P4/T5/J4 | Not recorded | Produced executable contract-driven tests that expose duplicate handling and manifest-order defects while checking empty, mismatch, unexpected, and non-mutation behavior. | Start Priority 7 retry, pagination, and resumability. |
 
 Score key: `C` correctness, `P` Python quality, `T` testing, `J` production judgment. Each score is out of 5.
 
@@ -117,6 +124,23 @@ For each exercise, add only information useful for the next attempt.
 - One thing to remember: Parse into a canonical value first, validate that value second, and make exception tests fail explicitly when no exception is raised.
 - Recommended next exercise: MINI-005 — reconciliation, while carrying forward exact failure-path testing.
 
+### MINI-005 — Reconcile Invoice Snapshots
+
+- Assumption or approach: Indexed source and target records by `invoice_id`, rejected duplicate IDs, and derived classifications through keyed membership checks.
+- Main issue found: The initial set-based outputs lost encounter order; the first revision then built overlap IDs in target order even though `changed` required source order. Submitted tests did not initially assert results or deliberately reverse shared-ID order.
+- Revision: Iterated the source dictionary for source-ordered outputs and the target dictionary for target-ordered output, compared only `amount` and `status`, and retained linear O(n + m) lookup behavior.
+- One thing to remember: To test an ordering contract, make the competing input order intentionally different so the wrong driver cannot pass accidentally.
+- Production follow-up: Proposed streaming with a `batch_id`. This is a useful start for lineage, checkpointing, and resumability, but the matching strategy still needs to bound state through sorted merge, consistent hash partitioning, or an external keyed store.
+- Recommended next exercise: MINI-006 — tests and edge cases.
+
+### MINI-006 — Test Loadable File Selection
+
+- Assumption or approach: Derived table-driven valid and invalid cases from the contract and used deep copies for mutation checks.
+- Main issue found: Early ordering fixtures mixed size mismatches with ordering, and one revision defined cases without executing them correctly.
+- Revision: Created deliberately conflicting manifest and arrival orders with otherwise matching records, covered duplicates in both inputs, executed the case table with its loop variables, and retained exact exception and non-mutation assertions.
+- One thing to remember: An ordering fixture must make every record otherwise eligible, and a table of cases provides coverage only when every row is actually passed to the function under test.
+- Recommended next exercise: MINI-007 — retry, pagination, and resumability.
+
 ## Completion Standard
 
 A topic becomes `Solid` when both are true:
@@ -128,6 +152,6 @@ Mark a topic `Revisit` if the same issue appears in two later exercises.
 
 ## Next Session
 
-MINI-004 is complete. When ready to continue, use the mini prompt and say:
+MINI-006 is complete. When ready to continue, use the mini prompt and say:
 
 > Start mini. Use the next priority in `progress_mini.md`. Do not give hints unless I ask.

@@ -1,6 +1,6 @@
 # Senior Data Engineer Python Mini Practice: Weak Spots
 
-Last updated: 2026-09-07
+Last updated: 2026-09-09
 
 Use this file only for weaknesses demonstrated during mini exercises. Keep entries specific, actionable, and linked to exercise IDs. Move resolved items to the resolved table instead of deleting them.
 
@@ -17,9 +17,9 @@ Use this file only for weaknesses demonstrated during mini exercises. Keep entri
 
 | Priority | Weak spot | Evidence | Impact | Next drill | Status |
 | --- | --- | --- | --- | --- | --- |
-| 3 | Ordered uniqueness and collection choice | MINI-002 began with linear list membership; MINI-002-R1 removed duplicate conflicts using `set`, which did not preserve discovery order. The final version correctly used insertion-ordered dictionaries. | The wrong collection can produce O(n²) behavior or nondeterministic ordered output. | In MINI-003, state the ordering and lookup requirements before choosing list, set, or dictionary. | Recheck |
-| 1 | Exception semantics and failure-path tests | MINI-004 revisions repeatedly returned `ValueError` objects or used `assert function(invalid_record)`, which could pass when no exception was raised. MINI-004-R8 corrected the tests with `try`/`except`/`else` and table-driven cases. | Malformed records can leak into output while tests incorrectly report success. | Repeat the corrected failure-path pattern in one separate exercise before resolving. | Recheck |
 | 2 | Parse-then-validate control flow | MINI-004 initially inspected string formatting and validated before conversion, causing inconsistent behavior for zero, negative strings, and conversion errors. | Equivalent numeric representations can receive different validation results. | In a later parsing task, create one canonical candidate and apply domain checks once. | Recheck |
+| 1 | Ordering-specific test selection | MINI-005 initially lost order through set operations. MINI-006 ultimately used deliberately conflicting manifest and arrival orders, but its first fixture also included a size mismatch and therefore did not isolate ordering. | An ordering bug can pass when both fixtures happen to use compatible orders or when another condition excludes a record first. | In a later test task, make competing input orders intentionally different while holding every other condition equal. | Recheck |
+| 3 | Iterable-based bounded reconciliation | In the MINI-005 production follow-up, the proposed strategy was streaming with a `batch_id`. The follow-up example introduced `Iterable` inputs, an `Iterator` result, and sorted merge, but this pattern has not yet been implemented independently. | Lazy input/output avoids eager lists, but streaming alone can still retain O(n + m) keys unless matching state is bounded; calling `list()` on the result also restores eager buffering. | In Priority 8, implement a generator over sorted iterables, consume it incrementally, and explain the maximum retained state. | New |
 
 Status values: `New`, `Practicing`, or `Recheck`.
 
@@ -44,6 +44,8 @@ Move an item here after two clean demonstrations in separate exercises.
 | --- | --- | --- | --- |
 | Exact output-contract handling | MINI-001 | MINI-003, MINI-004-R7 | Preserved exact result shapes in MINI-003 and exact canonical keys and exception text in MINI-004-R7. |
 | Type and boundary validation | MINI-001 | MINI-001-R2, MINI-004-R7 | Correctly handled whitespace and non-string identifiers, booleans, zero, negatives, and malformed values in two separate exercises. |
+| Ordered uniqueness and collection choice | MINI-002 | MINI-003, MINI-005-R2 | Used insertion-ordered keyed lookups without set conversion and preserved each specified output order with linear membership checks. |
+| Exception semantics and failure-path tests | MINI-004 | MINI-004-R8, MINI-005-R2 | Used explicit no-exception failure and exact `ValueError` assertions in two separate exercises. |
 
 ## Exercise Evidence
 
@@ -108,6 +110,32 @@ Add a compact entry only when an exercise reveals or rechecks a weakness.
 - Better rule: Parse allowed inputs into one candidate, validate the canonical value once, and make every exception test fail explicitly when no exception is raised.
 - Small next drill: Repeat the corrected failure-path assertion in one separate exercise before marking the weakness resolved.
 - Status: Recheck for exception tests and parse-then-validate flow
+
+### MINI-005: Ordered invoice reconciliation
+
+- Observed: The first implementation used set operations that discarded order, and the next revision populated shared IDs from target order. The final version correctly drove source-ordered results from the source dictionary and target-ordered results from the target dictionary. Duplicate failure tests correctly used `try`/`except`/`else`, but no submitted case deliberately reversed shared-ID order.
+- Why it matters: Reconciliation output may be logically correct as a set while still violating a deterministic sequence contract relied on by downstream processing and tests.
+- Better rule: Derive each output from the input whose order the contract names, and construct fixtures where source and target order conflict.
+- Small next drill: In MINI-006, write the reversed-order assertion before reviewing the supplied implementation.
+- Status: Practicing for ordering-specific test selection; resolved for collection choice and exception-test semantics
+
+### MINI-005 Follow-up: Large-scale reconciliation
+
+- Observed: Proposed streaming plus a `batch_id` for snapshots that do not fit in memory. The answer identifies incremental processing and run identity, but does not yet specify how records with the same `invoice_id` meet without retaining all keys.
+- Why it matters: A streaming loop can still consume unbounded memory when reconciliation requires global keyed matching.
+- Better rule: Pair streaming with a concrete bounded-state mechanism: sorted merge, consistent hash partitioning, or an external keyed store. Use `batch_id` for lineage, snapshot isolation, checkpointing, and restart safety.
+- Iterable rule: Accept `Iterable[Record]` when callers may provide a list, generator, file reader, or database cursor. Return `Iterator[Result]` and use `yield` when each reconciliation result can be consumed immediately.
+- Memory warning: `Iterable` describes how values are supplied, not how much state the algorithm retains. A generator that stores every previously seen key is still O(n) memory, and wrapping the output in `list(...)` buffers every result.
+- Small next drill: In Priority 8, state the input-order assumption, matching mechanism, checkpoint, and maximum retained state.
+- Status: New
+
+### MINI-006: Loadable-file contract tests
+
+- Observed: The final tests cover empty input, normal matching, mismatches, unexpected arrivals, duplicates in either input, non-mutation, and exact manifest order. Early revisions mixed a size mismatch into an ordering fixture and briefly defined a case table without correctly calling the function with each row.
+- Why it matters: A test can appear to cover ordering while actually passing or failing because of another filter, and unexecuted table rows provide no protection.
+- Better rule: For an ordering test, make all compared records otherwise eligible and deliberately reverse the competing input order; verify that each table row is passed to the function under test.
+- Small next drill: Repeat the same isolation pattern once in a later task with a different order-owning input.
+- Status: Recheck
 
 ## Update Rules
 
