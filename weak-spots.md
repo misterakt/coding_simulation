@@ -1,6 +1,6 @@
 # Python Interview Practice: Weak Spots And Drills
 
-Last updated: 2026-09-11
+Last updated: 2026-09-12
 
 This is a practice guide, not a list of failures. These are the areas that caused the most friction across the practice exercises and will produce the biggest improvement with repetition.
 
@@ -11,6 +11,8 @@ This is a practice guide, not a list of failures. These are the areas that cause
 The main difficulty has been deciding what to test, especially edge cases and failure paths. Initial tests usually covered empty input, one valid input, and the happy path. Important requirements such as malformed data, conflicts, invalid types, limits, and exceptions were often added only after review.
 
 MINI-004 initially used invalid-input assertions that could pass when the function returned a truthy value instead of raising. In MINI-004-R8, this improved to table-driven valid and invalid cases, exact exception-message checks, explicit failure when no exception is raised, and input-mutation snapshots. This is one clean demonstration; repeat it independently before treating the pattern as resolved.
+
+MINI-009 initially evaluated equality in its test loop without `assert`, so incorrect outputs would not fail the script. The final revision added assertions and an assisted ordering fixture. Repeat this independently: use conflicting input orders and confirm that temporarily changing an expected result makes the test fail.
 
 ### Better mental model
 
@@ -172,6 +174,8 @@ Early revisions occasionally used a slightly different field name or error shape
 
 Treat the return shape as an API contract. Before coding, copy the requested keys into a skeleton return value and keep error entries consistent.
 
+Ordering is also part of the contract. MINI-009 corrected schema reporting by processing existing fields in current-schema order before additions in proposed-schema order. Avoid set subtraction when encounter order matters, and do not group removals ahead of changes if the contract requires field-by-field order.
+
 ```python
 {
     "cursor": cursor,
@@ -241,6 +245,18 @@ checkpoint and restart boundary
 whether any caller converts the iterator back into a list
 ```
 
+## 8. Numeric Widening: Range Is Not Exactness
+
+### Learning from MINI-009
+
+The production answer correctly considered numeric limits, downstream calculations, and consumer type contracts. The refinement is to check exact representability, not only whether a value fits within the float's range. A 64-bit float cannot represent `2**53 + 1` exactly.
+
+Before approving integer-to-float changes, identify the actual integer and floating-point formats, inspect expected value ranges, test rounding effects in downstream calculations, and verify consumer schemas. Treat the exercise's compatibility rules as an explicit pipeline policy rather than a universal rule that every widening conversion is safe.
+
+### Drill
+
+Explain why an integer may fit within a float's range but lose precision, then name one downstream calculation or contract that requires an exact value.
+
 ## What Is Already Improving
 
 - You now use keyed dictionaries instead of nested matching loops.
@@ -248,7 +264,8 @@ whether any caller converts the iterator back into a list
 - You track state clearly for ingestion: current cursor, last successful cursor, next cursor, counts, and failure flag.
 - You are increasingly choosing simple, readable control flow such as `while True` with explicit `break` conditions.
 - You implemented a correct O(n + m) streaming merge join with O(1) additional matching state over sorted iterables.
+- You implemented deterministic schema-change reporting and identified downstream checks before approving a numeric type change.
 
 ## Highest-Value Next Step
 
-Continue with schema evolution and contracts. Carry forward the same habit of turning each compatibility rule into a focused test, while revisiting key-based partitioning when a later scale question uses unsorted inputs.
+Continue with event and orchestration state. Independently assert each state-transition rule and boundary, and retain later rechecks for conflicting-order fixtures, numeric exactness, and bounded key partitioning.

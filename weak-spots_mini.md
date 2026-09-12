@@ -1,6 +1,6 @@
 # Senior Data Engineer Python Mini Practice: Weak Spots
 
-Last updated: 2026-09-11
+Last updated: 2026-09-12
 
 Use this file only for weaknesses demonstrated during mini exercises. Keep entries specific, actionable, and linked to exercise IDs. Move resolved items to the resolved table instead of deleting them.
 
@@ -19,7 +19,8 @@ Use this file only for weaknesses demonstrated during mini exercises. Keep entri
 | --- | --- | --- | --- | --- | --- |
 | 1 | Retry-attempt accounting and per-page reset | MINI-007 initially allowed `max_attempts + 1` calls, and an early revision did not reset the allowance independently after each successful page. | An extra API call can exceed rate or cost limits, while a shared counter can stop later pages prematurely and return the wrong resume cursor. | In a later pagination task, assert exact cursor call sequences for both exhaustion and separate failures on consecutive pages. | Recheck |
 | 2 | Parse-then-validate control flow | MINI-004 initially inspected string formatting and validated before conversion, causing inconsistent behavior for zero, negative strings, and conversion errors. | Equivalent numeric representations can receive different validation results. | In a later parsing task, create one canonical candidate and apply domain checks once. | Recheck |
-| 1 | Ordering-specific test selection | MINI-005 initially lost order through set operations. MINI-006 ultimately used deliberately conflicting manifest and arrival orders, but its first fixture also included a size mismatch and therefore did not isolate ordering. | An ordering bug can pass when both fixtures happen to use compatible orders or when another condition excludes a record first. | In a later test task, make competing input orders intentionally different while holding every other condition equal. | Recheck |
+| 1 | Ordering-specific test selection | MINI-005 and MINI-006 required ordering corrections. MINI-009 again used unordered removals and the wrong order-owning input; the final revision added an assisted conflicting-order fixture after initially omitting it. | An ordering bug can pass when fixture orders agree, and grouping change categories can violate field encounter order even when every change is detected. | Independently build a fixture with reversed shared-field order, an interleaved removal, and an addition placed first in the proposed input. | Recheck |
+| 1 | Executable test assertions | MINI-006 briefly defined cases without correctly executing them; MINI-009 initially computed `check_schema_change(...) == output` without `assert`, then corrected the loop. | A script can finish successfully even when every expected result is wrong. | In the next table-driven test, temporarily make one expected result wrong and confirm the test fails before restoring it. | Recheck |
 | 3 | Iterable-based bounded reconciliation and partitioning | MINI-005 proposed streaming with a `batch_id`; MINI-008 then implemented a correct O(1)-state merge over sorted iterables, but the unsorted-input follow-up again began with batches before defining key co-location. | Lazy iteration or smaller arbitrary batches do not ensure matching records meet; a large or skewed partition can still exceed worker memory. | In a later scale drill, choose external sorting, deterministic hash partitioning, or an external keyed store; state how keys co-locate and how the largest partition is bounded. | Recheck |
 
 Status values: `New`, `Practicing`, or `Recheck`.
@@ -153,6 +154,14 @@ Add a compact entry only when an exercise reveals or rechecks a weakness.
 - Better rule: For sorted inputs, use a merge join with one current record per stream. For unsorted inputs, make both sides use the same stable key partition and size the partition count from the maximum safe in-memory working set, with headroom for skew.
 - Small next drill: Given unsorted input size, worker memory, and skew estimates, choose a partition count and explain how retries reuse the same partition metadata.
 - Status: Recheck
+
+### MINI-009: Ordered schema reporting and effective assertions
+
+- Observed: The first implementation detected the right categories but lost current-field order through set subtraction and proposed-driven iteration. The test loop discarded equality comparisons. The final revision used two ordered passes, added assertions, and incorporated an assisted regression fixture; all four submitted tests passed.
+- Why it matters: A compatibility report is an ordered API contract, and comparisons without assertions cannot enforce that contract.
+- Better rule: Drive each output phase from its order-owning input, and make every table row assert the full expected result. Deliberately conflict the two input orders to expose an incorrect driver.
+- Small next drill: Independently construct an ordering fixture and prove the test is effective by temporarily supplying an incorrect expected output.
+- Status: Recheck; the final assisted correction is not sufficient to resolve the recurring test-selection weakness.
 
 ## Update Rules
 

@@ -1,19 +1,19 @@
 # Senior Data Engineer Python Mini Practice Progress
 
-Last updated: 2026-09-11
+Last updated: 2026-09-12
 
 Use this file to track every exercise run with `docs/senior_data_engineer_python_interview_mini_prompt.md`.
 
 ## Current Status
 
-- Practice state: Active; MINI-008 completed on 2026-09-11
-- Topics completed: 8 of 10
-- Attempts recorded: 29
-- Latest result: Pass — C5/P3/T4/J4
-- Resume priority: 9 — Schema evolution and contracts
+- Practice state: Active; MINI-009 completed on 2026-09-12
+- Topics completed: 9 of 10
+- Attempts recorded: 32
+- Latest result: Pass — C5/P3/T3/J4
+- Resume priority: 10 — Event and orchestration state
 - Default timebox: 10 minutes
-- Next exercise ID: MINI-009
-- Current streak: 4 passes
+- Next exercise ID: MINI-010
+- Current streak: 5 passes
 
 ## Stage 1 Closure
 
@@ -47,10 +47,10 @@ Work from the highest priority downward. Repeat a topic when the result is `Retr
 | 3 | Dictionary lookup and grouping | Solid | C5/P5/T4/J5 | Covered in MINI-003. |
 | 4 | Transformation and parsing | Solid | C5/P3/T4/J4 | Recheck parse-then-validate flow and exception tests in a separate exercise. |
 | 5 | Reconciliation | Solid | C5/P3/T3/J4 | Recheck order-specific tests and bounded-state reconciliation later. |
-| 6 | Tests and edge cases | Solid | C5/P4/T5/J4 | Recheck deliberately conflicting input orders in a later test task. |
+| 6 | Tests and edge cases | Solid | C5/P4/T5/J4 | Ordering and executable assertions rechecked with assistance in MINI-009; repeat independently later. |
 | 7 | Retry, pagination, and resumability | Solid | C5/P4/T4/J4 | Recheck exact per-cursor attempt counts and malformed-page handling later. |
 | 8 | Streaming and memory safety | Solid | C5/P3/T4/J4 | Recheck key-based partitioning and partition sizing on unsorted inputs later. |
-| 9 | Schema evolution and contracts | Not started | — | Pending. |
+| 9 | Schema evolution and contracts | Solid | C5/P3/T3/J4 | Recheck allowed changes, non-mutation tests, and numeric precision in a later contract task. |
 | 10 | Event and orchestration state | Not started | — | Pending. |
 
 Status values: `Not started`, `Practicing`, `Solid`, or `Revisit`.
@@ -90,6 +90,9 @@ Add one row after every exercise, including retries.
 | 2026-09-10 | MINI-007-R2 | 7 — Retry, pagination, and resumability | Update | Fix per-cursor retry accounting | Pass | C5/P3/T4/J4 | Not recorded | Limited calls to `max_attempts`, reset the allowance per successful page, and retained a safe resume cursor. | Clean up names and unused imports; later recheck the pattern on a multi-page partial failure. |
 | 2026-09-10 | MINI-007-R3 | 7 — Retry, pagination, and resumability | Update | Complete resumable paginated loader | Pass | C5/P4/T4/J4 | Not recorded | Used a clear remaining-attempt counter and executable success, recovery, and exhaustion assertions. | Start Priority 8 streaming and memory safety. |
 | 2026-09-11 | MINI-008 | 8 — Streaming and memory safety | Implement | Reconcile sorted file streams | Pass | C5/P3/T4/J4 | Not recorded | Implemented a generator-based merge join, corrected one-sided advancement and exhaustion handling, and added empty-stream coverage. | Start Priority 9 schema evolution; later recheck deterministic key partitioning for unsorted inputs. |
+| 2026-09-12 | MINI-009 | 9 — Schema evolution and contracts | Implement | Check a schema change | Revise | C3/P3/T1/J3 | Not recorded | Detected all breaking-change categories, but set-based removals lost order and the test loop discarded comparisons. | Process existing fields in current order, additions afterward, and assert test results. |
+| 2026-09-12 | MINI-009-R1 | 9 — Schema evolution and contracts | Update | Correct ordered compatibility reporting | Revise | C5/P3/T2/J3 | Not recorded | Implemented two ordered passes and executable assertions; passed 36 external ordering permutations and non-mutation checks. | Add the requested conflicting-order regression fixture. |
+| 2026-09-12 | MINI-009-R2 | 9 — Schema evolution and contracts | Test | Complete schema-change regression coverage | Pass | C5/P3/T3/J4 | Not recorded | Added the ordering fixture, removed unsupported None handling and the leftover ellipsis, and discussed downstream contracts and numeric widening. | Start Priority 10 event and orchestration state; later recheck float exactness and allowed-change tests. |
 
 Score key: `C` correctness, `P` Python quality, `T` testing, `J` production judgment. Each score is out of 5.
 
@@ -162,6 +165,15 @@ For each exercise, add only information useful for the next attempt.
 - One thing to remember: A batch label provides lineage, not matching; both sides must use the same stable key-partition function and partition count, sized so the largest partition fits safely in a worker.
 - Recommended next exercise: MINI-009 — schema evolution and contracts.
 
+### MINI-009 — Check a Schema Change
+
+- Assumption or approach: Applied the stated pipeline policy using two dictionary passes: existing fields in current order, then additions in proposed order.
+- Main issue found: The initial set-based removal phase and proposed-driven comparison loop violated ordering; the test loop evaluated equality without asserting it. The first revision fixed the implementation but omitted the requested ordering regression.
+- Revision: Added executable assertions and an assisted fixture that places a proposed addition before existing-field changes and a current removal after a changed field. All four submitted tests passed; external checks covered ordering permutations, allowed changes, empty schemas, and non-mutation.
+- One thing to remember: A test must assert its result, and an ordering fixture must deliberately distinguish competing input orders. Allowed changes and unchanged schemas also need explicit tests.
+- Production follow-up: Identified numeric limits, downstream calculations, and consumer contracts before approving int-to-float widening. Refined numeric capacity to exact representability: a 64-bit float cannot represent `2**53 + 1` exactly, even though it is within range.
+- Recommended next exercise: MINI-010 — event and orchestration state.
+
 ## Completion Standard
 
 A topic becomes `Solid` when both are true:
@@ -173,6 +185,6 @@ Mark a topic `Revisit` if the same issue appears in two later exercises.
 
 ## Next Session
 
-MINI-008 is complete. When ready to continue, use the mini prompt and say:
+MINI-009 is complete. When ready to continue, use the mini prompt and say:
 
 > Start mini. Use the next priority in `progress_mini.md`. Do not give hints unless I ask.
