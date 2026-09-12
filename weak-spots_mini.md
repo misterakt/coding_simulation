@@ -1,6 +1,6 @@
 # Senior Data Engineer Python Mini Practice: Weak Spots
 
-Last updated: 2026-09-09
+Last updated: 2026-09-11
 
 Use this file only for weaknesses demonstrated during mini exercises. Keep entries specific, actionable, and linked to exercise IDs. Move resolved items to the resolved table instead of deleting them.
 
@@ -17,9 +17,10 @@ Use this file only for weaknesses demonstrated during mini exercises. Keep entri
 
 | Priority | Weak spot | Evidence | Impact | Next drill | Status |
 | --- | --- | --- | --- | --- | --- |
+| 1 | Retry-attempt accounting and per-page reset | MINI-007 initially allowed `max_attempts + 1` calls, and an early revision did not reset the allowance independently after each successful page. | An extra API call can exceed rate or cost limits, while a shared counter can stop later pages prematurely and return the wrong resume cursor. | In a later pagination task, assert exact cursor call sequences for both exhaustion and separate failures on consecutive pages. | Recheck |
 | 2 | Parse-then-validate control flow | MINI-004 initially inspected string formatting and validated before conversion, causing inconsistent behavior for zero, negative strings, and conversion errors. | Equivalent numeric representations can receive different validation results. | In a later parsing task, create one canonical candidate and apply domain checks once. | Recheck |
 | 1 | Ordering-specific test selection | MINI-005 initially lost order through set operations. MINI-006 ultimately used deliberately conflicting manifest and arrival orders, but its first fixture also included a size mismatch and therefore did not isolate ordering. | An ordering bug can pass when both fixtures happen to use compatible orders or when another condition excludes a record first. | In a later test task, make competing input orders intentionally different while holding every other condition equal. | Recheck |
-| 3 | Iterable-based bounded reconciliation | In the MINI-005 production follow-up, the proposed strategy was streaming with a `batch_id`. The follow-up example introduced `Iterable` inputs, an `Iterator` result, and sorted merge, but this pattern has not yet been implemented independently. | Lazy input/output avoids eager lists, but streaming alone can still retain O(n + m) keys unless matching state is bounded; calling `list()` on the result also restores eager buffering. | In Priority 8, implement a generator over sorted iterables, consume it incrementally, and explain the maximum retained state. | New |
+| 3 | Iterable-based bounded reconciliation and partitioning | MINI-005 proposed streaming with a `batch_id`; MINI-008 then implemented a correct O(1)-state merge over sorted iterables, but the unsorted-input follow-up again began with batches before defining key co-location. | Lazy iteration or smaller arbitrary batches do not ensure matching records meet; a large or skewed partition can still exceed worker memory. | In a later scale drill, choose external sorting, deterministic hash partitioning, or an external keyed store; state how keys co-locate and how the largest partition is bounded. | Recheck |
 
 Status values: `New`, `Practicing`, or `Recheck`.
 
@@ -135,6 +136,22 @@ Add a compact entry only when an exercise reveals or rechecks a weakness.
 - Why it matters: A test can appear to cover ordering while actually passing or failing because of another filter, and unexecuted table rows provide no protection.
 - Better rule: For an ordering test, make all compared records otherwise eligible and deliberately reverse the competing input order; verify that each table row is passed to the function under test.
 - Small next drill: Repeat the same isolation pattern once in a later task with a different order-owning input.
+- Status: Recheck
+
+### MINI-007: Resumable paginated loader
+
+- Observed: The first versions retried the correct cursor but allowed one more call than `max_attempts`; one revision also carried a depleted allowance into the next page. The final version limits attempts per cursor, resets after success, appends only completed pages, and returns the failed cursor for resumption.
+- Why it matters: Retry limits must translate into an exact number of external calls, and resumability depends on never advancing past or appending an incomplete page.
+- Better rule: Name the counter by what it measures, decrement or increment it exactly once per failed call, reset it at the page-success boundary, and test exact call counts.
+- Small next drill: Simulate a successful first page followed by an exhausted second page and assert the partial records, cursor sequence, and call count.
+- Status: Recheck
+
+### MINI-008: Streaming merge and bounded matching
+
+- Observed: The initial merge advanced both iterators for unequal IDs and lost later matches, then correctly changed to one-sided advancement with exhaustion handling. The final generator passed sorted presence, mismatch, and empty-stream checks while retaining only the current record from each input. In the scale follow-up, `batch_id` was initially treated as the batching mechanism before deterministic partitioning by `file_id` and partition sizing were clarified.
+- Why it matters: A streaming interface bounds output buffering only when the algorithm also bounds matching state, and arbitrary batches can place the same key from the two inputs in different units of work.
+- Better rule: For sorted inputs, use a merge join with one current record per stream. For unsorted inputs, make both sides use the same stable key partition and size the partition count from the maximum safe in-memory working set, with headroom for skew.
+- Small next drill: Given unsorted input size, worker memory, and skew estimates, choose a partition count and explain how retries reuse the same partition metadata.
 - Status: Recheck
 
 ## Update Rules

@@ -1,19 +1,19 @@
 # Senior Data Engineer Python Mini Practice Progress
 
-Last updated: 2026-09-09
+Last updated: 2026-09-11
 
 Use this file to track every exercise run with `docs/senior_data_engineer_python_interview_mini_prompt.md`.
 
 ## Current Status
 
-- Practice state: Active; MINI-006 completed on 2026-09-09
-- Topics completed: 6 of 10
-- Attempts recorded: 24
-- Latest result: Pass — C5/P4/T5/J4
-- Resume priority: 7 — Retry, pagination, and resumability
+- Practice state: Active; MINI-008 completed on 2026-09-11
+- Topics completed: 8 of 10
+- Attempts recorded: 29
+- Latest result: Pass — C5/P3/T4/J4
+- Resume priority: 9 — Schema evolution and contracts
 - Default timebox: 10 minutes
-- Next exercise ID: MINI-007
-- Current streak: 2 passes
+- Next exercise ID: MINI-009
+- Current streak: 4 passes
 
 ## Stage 1 Closure
 
@@ -48,8 +48,8 @@ Work from the highest priority downward. Repeat a topic when the result is `Retr
 | 4 | Transformation and parsing | Solid | C5/P3/T4/J4 | Recheck parse-then-validate flow and exception tests in a separate exercise. |
 | 5 | Reconciliation | Solid | C5/P3/T3/J4 | Recheck order-specific tests and bounded-state reconciliation later. |
 | 6 | Tests and edge cases | Solid | C5/P4/T5/J4 | Recheck deliberately conflicting input orders in a later test task. |
-| 7 | Retry, pagination, and resumability | Not started | — | Pending. |
-| 8 | Streaming and memory safety | Not started | — | Pending. |
+| 7 | Retry, pagination, and resumability | Solid | C5/P4/T4/J4 | Recheck exact per-cursor attempt counts and malformed-page handling later. |
+| 8 | Streaming and memory safety | Solid | C5/P3/T4/J4 | Recheck key-based partitioning and partition sizing on unsorted inputs later. |
 | 9 | Schema evolution and contracts | Not started | — | Pending. |
 | 10 | Event and orchestration state | Not started | — | Pending. |
 
@@ -85,6 +85,11 @@ Add one row after every exercise, including retries.
 | 2026-09-09 | MINI-006-R1 | 6 — Tests and edge cases | Test | Correct test coverage gaps | Retry | C2/P3/T3/J3 | Not recorded | Added duplicate-arrival and successful-path mutation cases. | Fix tuple syntax, execute the valid-case table, and correct the second ordering fixture. |
 | 2026-09-09 | MINI-006-R2 | 6 — Tests and edge cases | Test | Complete ordering fixtures | Revise | C4/P3/T4/J4 | Not recorded | Corrected both reversed-order fixtures and added the valid-case loop. | Call the function with the loop variables rather than later mutation-test variables. |
 | 2026-09-09 | MINI-006-R3 | 6 — Tests and edge cases | Test | Complete loadable-file tests | Pass | C5/P4/T5/J4 | Not recorded | Produced executable contract-driven tests that expose duplicate handling and manifest-order defects while checking empty, mismatch, unexpected, and non-mutation behavior. | Start Priority 7 retry, pagination, and resumability. |
+| 2026-09-10 | MINI-007 | 7 — Retry, pagination, and resumability | Update | Add retry and safe-resume behavior to a paginated loader | Revise | C3/P3/T3/J3 | Not recorded | Retried `TimeoutError` on the same cursor and reset the allowance after success. | Return the failed cursor when attempts are exhausted instead of falling through to an undefined page. |
+| 2026-09-10 | MINI-007-R1 | 7 — Retry, pagination, and resumability | Update | Correct exhausted-retry control flow | Revise | C3/P3/T2/J3 | Not recorded | Returned completed records with the failed cursor after exhaustion. | Fix the off-by-one attempt count and reset attempts independently for each successful page. |
+| 2026-09-10 | MINI-007-R2 | 7 — Retry, pagination, and resumability | Update | Fix per-cursor retry accounting | Pass | C5/P3/T4/J4 | Not recorded | Limited calls to `max_attempts`, reset the allowance per successful page, and retained a safe resume cursor. | Clean up names and unused imports; later recheck the pattern on a multi-page partial failure. |
+| 2026-09-10 | MINI-007-R3 | 7 — Retry, pagination, and resumability | Update | Complete resumable paginated loader | Pass | C5/P4/T4/J4 | Not recorded | Used a clear remaining-attempt counter and executable success, recovery, and exhaustion assertions. | Start Priority 8 streaming and memory safety. |
+| 2026-09-11 | MINI-008 | 8 — Streaming and memory safety | Implement | Reconcile sorted file streams | Pass | C5/P3/T4/J4 | Not recorded | Implemented a generator-based merge join, corrected one-sided advancement and exhaustion handling, and added empty-stream coverage. | Start Priority 9 schema evolution; later recheck deterministic key partitioning for unsorted inputs. |
 
 Score key: `C` correctness, `P` Python quality, `T` testing, `J` production judgment. Each score is out of 5.
 
@@ -141,6 +146,22 @@ For each exercise, add only information useful for the next attempt.
 - One thing to remember: An ordering fixture must make every record otherwise eligible, and a table of cases provides coverage only when every row is actually passed to the function under test.
 - Recommended next exercise: MINI-007 — retry, pagination, and resumability.
 
+### MINI-007 — Resumable Paginated Loader
+
+- Assumption or approach: Retried `TimeoutError` against the current cursor and appended records only after a successful page response.
+- Main issue found: Early revisions checked exhaustion after allowing one extra call and did not initially return safely when the failed page had never been assigned; one revision also failed to reset the allowance per page.
+- Revision: Counted at most `max_attempts` calls for each cursor, reset the allowance after success, and returned completed records plus the failed cursor when retries were exhausted.
+- One thing to remember: Define whether a limit means total attempts or additional retries, then assert the exact call count and cursor sequence.
+- Recommended next exercise: MINI-008 — streaming and memory safety, using a generator with explicitly bounded retained state.
+
+### MINI-008 — Reconcile Sorted File Streams
+
+- Assumption or approach: Used one iterator per sorted input, retained one current record from each, and yielded reconciliation differences incrementally.
+- Main issue found: The first version advanced both streams after unequal IDs and stopped without draining the remaining stream. The production follow-up initially proposed arbitrary batches identified by `batch_id`, which did not guarantee that matching keys met.
+- Revision: Advanced only the smaller key, advanced both equal keys, handled either stream ending, and used a sentinel to consume one-pass iterables with O(1) additional state. Clarified that unsorted inputs require external sorting, deterministic hash partitioning by `file_id`, or an external keyed store.
+- One thing to remember: A batch label provides lineage, not matching; both sides must use the same stable key-partition function and partition count, sized so the largest partition fits safely in a worker.
+- Recommended next exercise: MINI-009 — schema evolution and contracts.
+
 ## Completion Standard
 
 A topic becomes `Solid` when both are true:
@@ -152,6 +173,6 @@ Mark a topic `Revisit` if the same issue appears in two later exercises.
 
 ## Next Session
 
-MINI-006 is complete. When ready to continue, use the mini prompt and say:
+MINI-008 is complete. When ready to continue, use the mini prompt and say:
 
 > Start mini. Use the next priority in `progress_mini.md`. Do not give hints unless I ask.

@@ -1,6 +1,6 @@
 # Python Interview Practice: Weak Spots And Drills
 
-Last updated: 2026-09-07
+Last updated: 2026-09-11
 
 This is a practice guide, not a list of failures. These are the areas that caused the most friction across the practice exercises and will produce the biggest improvement with repetition.
 
@@ -189,6 +189,8 @@ Add one assertion that checks the full empty-result contract. For special cases,
 
 For the MINI-005 scale follow-up, the proposed approach was streaming with a `batch_id`. Streaming is the right direction for incremental reads, and `batch_id` is useful for lineage and resumability, but neither determines how matching state is bounded.
 
+MINI-008 independently implemented the bounded sorted-merge pattern using `Iterable` inputs, `next()` with a sentinel, and a generator result. The first attempt advanced both inputs for unequal keys and stopped when either side ended; the corrected version advances only the smaller key and drains the remaining stream. In the unsorted-input follow-up, batching was again proposed before specifying how equal `file_id` values are routed together.
+
 ### Rule to remember
 
 Two large snapshots still need a concrete matching strategy:
@@ -198,6 +200,8 @@ Two large snapshots still need a concrete matching strategy:
 - an external keyed store or database join when local state cannot fit in memory
 
 Use `batch_id` to identify the snapshot/run, isolate retries, record checkpoints, and make outputs traceable. Do not treat it as the lookup mechanism.
+
+For unsorted inputs, both sides can be partitioned with the same deterministic function, such as `stable_hash(file_id) % partition_count`, so matching keys reach the same partition. Choose the count from the expanded working-set size and safe worker-memory budget, add headroom for skew, and validate the largest partition rather than relying on the average. Persist the hash method and partition count so retries reproduce the same routing.
 
 ### Python interface to remember
 
@@ -243,7 +247,8 @@ whether any caller converts the iterator back into a list
 - You distinguish exceptions from validation errors.
 - You track state clearly for ingestion: current cursor, last successful cursor, next cursor, counts, and failure flag.
 - You are increasingly choosing simple, readable control flow such as `while True` with explicit `break` conditions.
+- You implemented a correct O(n + m) streaming merge join with O(1) additional matching state over sorted iterables.
 
 ## Highest-Value Next Step
 
-For the next exercise, spend the first five minutes writing tests before implementation. Aim for one test for every stated rule, then use those tests as your build checklist.
+Continue with schema evolution and contracts. Carry forward the same habit of turning each compatibility rule into a focused test, while revisiting key-based partitioning when a later scale question uses unsorted inputs.
